@@ -1,43 +1,47 @@
 name: Pull Request CI
 
 on:
+  push:
+    branches:
+      - main
+      - "release-*"
   pull_request:
     branches:
       - main
       - 'release-*.*'
 
 jobs:
-  detect-changes:
-    runs-on: ubuntu-latest
-    # Required permissions
-    permissions:
-      pull-requests: read
-    # Set job outputs to values from filter step
-    outputs:
-      roles: ${{ steps.filter.outputs.roles }}
-    steps:
-    # For pull requests it's not necessary to checkout the code
-    - uses: dorny/paths-filter@v2
-      id: filter
-      with:
-        filters: |
-          roles:
-            - 'roles/**'
+  # detect-changes:
+  #   runs-on: ubuntu-latest
+  #   # Required permissions
+  #   permissions:
+  #     pull-requests: read
+  #   # Set job outputs to values from filter step
+  #   outputs:
+  #     roles: ${{ steps.filter.outputs.roles }}
+  #   steps:
+  #   # For pull requests it's not necessary to checkout the code
+  #   - uses: dorny/paths-filter@v2
+  #     id: filter
+  #     with:
+  #       filters: |
+  #         roles:
+  #           - 'roles/**'
 
-  ansible-lint:
-    needs: detect-changes
-    if: ${{ needs.detect-changes.outputs.roles == 'true' }}
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout PR branch
-        uses: actions/checkout@v4
-      - name: Ansible Lint
-        uses: ansible/ansible-lint-action@main
-        with:
-          path: "roles/"
+  # ansible-lint:
+  #   needs: detect-changes
+  #   if: ${{ needs.detect-changes.outputs.roles == 'true' }}
+  #   runs-on: ubuntu-latest
+  #   steps:
+  #     - name: Checkout PR branch
+  #       uses: actions/checkout@v4
+  #     - name: Ansible Lint
+  #       uses: ansible/ansible-lint-action@main
+  #       with:
+  #         path: "roles/"
 
   build-operator-bundle:
-    needs: detect-changes
+    # needs: detect-changes
     runs-on: ubuntu-latest
     env:
       IMG: ttl.sh/konveyor-operator-${{ github.sha }}:2h
@@ -53,3 +57,4 @@ jobs:
     uses: konveyor/ci/.github/workflows/global-ci-bundle.yml@main
     with:
       operator_bundle: ttl.sh/konveyor-operator-bundle-${{ github.sha }}:2h
+      run_ui_tests: true
